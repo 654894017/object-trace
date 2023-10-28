@@ -1,7 +1,6 @@
 package com.damon.object_trace;
 
 import org.apache.commons.lang3.builder.DiffResult;
-import org.apache.commons.lang3.builder.Diffable;
 
 public class DiffDeepComparator implements DeepComparator {
     @Override

@@ -5,7 +5,7 @@ import org.apache.commons.lang3.builder.Diffable;
 import org.apache.commons.lang3.builder.ReflectionDiffBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
-public interface Version<T> extends Diffable<T> {
+public interface Version<T> extends Diffable<T>, ID {
     int getVersion();
 
     default DiffResult<T> diff(T obj) {

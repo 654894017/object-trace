@@ -1,5 +1,10 @@
 package com.damon.object_trace;
 
+import com.damon.object_trace.comparator.DeepComparator;
+import com.damon.object_trace.comparator.DiffDeepComparator;
+import com.damon.object_trace.copier.DeepCopier;
+import com.damon.object_trace.copier.JsonDeepCopier;
+
 public class AggregateFactory {
     private static DeepCopier deepCopier = new JsonDeepCopier();
     private static DeepComparator deepComparator = new DiffDeepComparator();

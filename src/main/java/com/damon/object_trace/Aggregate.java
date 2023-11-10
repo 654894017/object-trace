@@ -1,6 +1,9 @@
 package com.damon.object_trace;
 
 
+import com.damon.object_trace.comparator.DeepComparator;
+import com.damon.object_trace.copier.DeepCopier;
+
 public class Aggregate<R extends Version> {
     private final int NEW_VERSION = 0;
     private R root;

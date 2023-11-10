@@ -1,4 +1,4 @@
-package com.damon.object_trace;
+package com.damon.object_trace.copier;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;

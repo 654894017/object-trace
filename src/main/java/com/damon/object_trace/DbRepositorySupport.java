@@ -11,20 +11,15 @@ import java.util.stream.Collectors;
 
 
 public abstract class DbRepositorySupport {
-
-    public static <T, ID> List<T> findNewEntities(List<T> newEntities, List<T> oldEntities, Function<T, ID> getId) {
-        Set<ID> newIds = (Set) newEntities.stream().map(getId).collect(Collectors.toSet());
-        Set<ID> oldIds = (Set) oldEntities.stream().map(getId).collect(Collectors.toSet());
-        newIds.removeAll(oldIds);
-        return (List) newEntities.stream().filter((item) -> {
-            return newIds.contains(getId.apply(item));
-        }).collect(Collectors.toList());
-    }
-
-    public static <T> List<T> findNewEntities(List<T> newEntities, Predicate<T> predicate) {
-        return (List) newEntities.stream().filter(predicate).collect(Collectors.toList());
-    }
-
+    /**
+     * 通过数据库乐观锁实现安全更新
+     * @param newObj
+     * @param oldObj
+     * @param function
+     * @return
+     * @param <A>
+     * @param <B>
+     */
     public <A extends Version, B> Boolean executeSafeUpdate(B newObj, B oldObj, Function<B, A> function) {
         A newObject = function.apply(newObj);
         A oldObject = function.apply(oldObj);
@@ -32,6 +27,15 @@ public abstract class DbRepositorySupport {
         return update(newObject, changedFields);
     }
 
+    /**
+     * 不带数据库乐观锁的更新，适用非表数据更新
+     * @param newObj
+     * @param oldObj
+     * @param convert
+     * @return
+     * @param <A>
+     * @param <B>
+     */
     public <A extends ID, B> Boolean executeUpdate(B newObj, B oldObj, Function<B, A> convert) {
         A newObject = convert.apply(newObj);
         A oldObject = convert.apply(oldObj);

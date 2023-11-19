@@ -4,7 +4,6 @@ package com.damon.object_trace.mybatis;
 import cn.hutool.core.util.ReflectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.Set;
 

@@ -7,18 +7,18 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 
 public abstract class DbRepositorySupport {
     /**
      * 通过数据库乐观锁实现安全更新
+     *
      * @param newObj
      * @param oldObj
      * @param function
-     * @return
      * @param <A>
      * @param <B>
+     * @return
      */
     public <A extends Version, B> Boolean executeSafeUpdate(B newObj, B oldObj, Function<B, A> function) {
         A newObject = function.apply(newObj);
@@ -29,12 +29,13 @@ public abstract class DbRepositorySupport {
 
     /**
      * 不带数据库乐观锁的更新，适用非表数据更新
+     *
      * @param newObj
      * @param oldObj
      * @param convert
-     * @return
      * @param <A>
      * @param <B>
+     * @return
      */
     public <A extends ID, B> Boolean executeUpdate(B newObj, B oldObj, Function<B, A> convert) {
         A newObject = convert.apply(newObj);

@@ -17,9 +17,11 @@ import java.util.stream.Collectors;
 
 public class MybatisRepositorySupport extends DbRepositorySupport implements ApplicationContextAware {
     private Map<String, BaseMapper> baseMapperMap;
+
     private BaseMapper getBaseMapper(String typeName) {
         return baseMapperMap.get(typeName);
     }
+
     @Override
     protected <A extends ID> void deleteBatch(List<A> removedItem) {
         Set<Long> removedItemIds = removedItem.stream().map(A::getId).collect(Collectors.toSet());

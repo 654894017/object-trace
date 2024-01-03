@@ -55,7 +55,7 @@ public abstract class DbRepositorySupport {
         if (predicate == null) {
             itemPOS = ObjectComparator.findNewEntities(newItems, oldItems, A::getId);
         } else {
-            itemPOS = ObjectComparator.findNewEntities(newItems, oldItems, predicate::test);
+            itemPOS = ObjectComparator.findNewEntities(newItems, predicate::test);
         }
         for (A item : itemPOS) {
             insert(item);
@@ -73,7 +73,6 @@ public abstract class DbRepositorySupport {
         if (!removedItems.isEmpty()) {
             deleteBatch(removedItems);
         }
-
     }
 
     protected abstract <A extends ID> void deleteBatch(List<A> removedItems);

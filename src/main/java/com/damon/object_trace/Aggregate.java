@@ -28,9 +28,9 @@ public class Aggregate<R extends Version> {
         return !deepComparator.isDeepEquals(root, snapshot);
     }
 
-    public boolean isNew() {
-        return root.getVersion() == NEW_VERSION;
-    }
+//    public boolean isNew() {
+//        return root.getVersion() == NEW_VERSION;
+//    }
 
     public R getRoot() {
         return root;

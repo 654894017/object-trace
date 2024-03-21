@@ -1,84 +1,88 @@
 package com.damon.object_trace.mybatis;
 
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import cn.hutool.core.util.ReflectUtil;
+import com.baomidou.mybatisplus.core.enums.SqlMethod;
+import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
+import com.baomidou.mybatisplus.core.toolkit.Constants;
+import com.baomidou.mybatisplus.core.toolkit.GlobalConfigUtils;
+import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
 import com.damon.object_trace.DbRepositorySupport;
 import com.damon.object_trace.ID;
-import com.damon.object_trace.Version;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
+import com.damon.object_trace.Versionable;
+import org.apache.ibatis.session.SqlSession;
+import org.mybatis.spring.SqlSessionUtils;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class MybatisRepositorySupport extends DbRepositorySupport implements ApplicationContextAware {
-    private Map<String, BaseMapper> baseMapperMap;
-
-    private BaseMapper getBaseMapper(String typeName) {
-        return baseMapperMap.get(typeName);
+public class MybatisRepositorySupport extends DbRepositorySupport {
+    @Override
+    protected <A extends ID> Boolean deleteBatch(List<A> removedItem) {
+        Set<Object> removedItemIds = removedItem.stream().map(A::getId).collect(Collectors.toSet());
+        Map<String, Object> map = CollectionUtils.newHashMapWithExpectedSize(1);
+        map.put(Constants.COLL, removedItemIds);
+        Class<?> clazz = removedItem.get(0).getClass();
+        SqlSession sqlSession = getSqlSession(clazz);
+        try {
+            return SqlHelper.retBool(sqlSession.delete(sqlStatement(SqlMethod.DELETE_BATCH_BY_IDS.getMethod(), clazz), map));
+        } finally {
+            closeSqlSession(sqlSession, clazz);
+        }
     }
 
     @Override
-    protected <A extends ID> void deleteBatch(List<A> removedItem) {
-        Set<Long> removedItemIds = removedItem.stream().map(A::getId).collect(Collectors.toSet());
-        getBaseMapper(getTypeName(removedItem.get(0))).deleteBatchIds(removedItemIds);
+    protected <A extends ID> Boolean insert(A entity) {
+        SqlSession sqlSession = getSqlSession(entity.getClass());
+        try {
+            return SqlHelper.retBool(sqlSession.insert(sqlStatement(SqlMethod.INSERT_ONE.getMethod(), entity.getClass()), entity));
+        } finally {
+            closeSqlSession(sqlSession, entity.getClass());
+        }
     }
 
-    @Override
-    protected <A extends ID> void insert(A entity) {
-        getBaseMapper(getTypeName(entity)).insert(entity);
+    private String sqlStatement(String sqlMethod, Class<?> entityClass) {
+        return SqlHelper.table(entityClass).getSqlStatement(sqlMethod);
+    }
+
+    private void closeSqlSession(SqlSession sqlSession, Class<?> entityClass) {
+        SqlSessionUtils.closeSqlSession(sqlSession, GlobalConfigUtils.currentSessionFactory(entityClass));
+    }
+
+    private SqlSession getSqlSession(Class<?> entityClass) {
+        return SqlSessionUtils.getSqlSession(GlobalConfigUtils.currentSessionFactory(entityClass));
+
     }
 
     @Override
     protected <A extends ID> Boolean update(A entity, Set<String> changedFields) {
-        UpdateWrapperNew<A> wrapper = new UpdateWrapperNew<>();
-        wrapper.set(changedFields, entity);
-        wrapper.eq("id", entity.getId());
-        int result = getBaseMapper(getTypeName(entity)).update(null, wrapper);
-        return result > 1;
+        A newEntity = (A) ReflectUtil.newInstance(entity.getClass());
+        newEntity.setId(entity.getId());
+        changedFields.forEach(field -> ReflectUtil.setFieldValue(newEntity, field, ReflectUtil.getFieldValue(entity, field)));
+        SqlSession sqlSession = getSqlSession(entity.getClass());
+        Map<String, Object> map = CollectionUtils.newHashMapWithExpectedSize(1);
+        map.put(Constants.ENTITY, newEntity);
+        try {
+            return SqlHelper.retBool(sqlSession.update(sqlStatement(SqlMethod.UPDATE_BY_ID.getMethod(), entity.getClass()), map));
+        } finally {
+            closeSqlSession(sqlSession, entity.getClass());
+        }
     }
 
     @Override
-    protected <A extends Version> Boolean update(A entity, Set<String> changedFields) {
-        UpdateWrapperNew<A> wrapper = new UpdateWrapperNew<>();
-        wrapper.set(changedFields, entity);
-        wrapper.set("version", entity.getVersion() + 1);
-        wrapper.eq("version", entity.getVersion());
-        wrapper.eq("id", entity.getId());
-        int result = getBaseMapper(getTypeName(entity)).update(null, wrapper);
-        return result > 1;
+    protected <A extends Versionable> Boolean update(A entity, Set<String> changedFields) {
+        A newEntity = (A) ReflectUtil.newInstance(entity.getClass());
+        newEntity.setId(entity.getId());
+        newEntity.setVersion(entity.getVersion());
+        changedFields.forEach(field -> ReflectUtil.setFieldValue(newEntity, field, ReflectUtil.getFieldValue(entity, field)));
+        SqlSession sqlSession = getSqlSession(entity.getClass());
+        Map<String, Object> map = CollectionUtils.newHashMapWithExpectedSize(1);
+        map.put(Constants.ENTITY, newEntity);
+        try {
+            return SqlHelper.retBool(sqlSession.update(sqlStatement(SqlMethod.UPDATE_BY_ID.getMethod(), entity.getClass()), map));
+        } finally {
+            closeSqlSession(sqlSession, entity.getClass());
+        }
     }
-
-    private String getTypeName(Object entity) {
-        return entity.getClass().getTypeName();
-    }
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) {
-        Map<String, BaseMapper> map = applicationContext.getBeansOfType(BaseMapper.class);
-        this.baseMapperMap = new HashMap<>(map.size());
-        map.values().forEach(baseMapper -> {
-            Class<?>[] interfaces = baseMapper.getClass().getInterfaces();
-            for (Class<?> classes : interfaces) {
-                Type[] baseMapperGenericInterfaces = classes.getGenericInterfaces();
-                for (Type type : baseMapperGenericInterfaces) {
-                    if (type instanceof ParameterizedType) {
-                        ParameterizedType parameterizedType = (ParameterizedType) type;
-                        Type[] typeArguments = parameterizedType.getActualTypeArguments();
-                        for (Type typeArgument : typeArguments) {
-                            if (typeArgument instanceof Class) {
-                                Class<?> typeClass = (Class<?>) typeArgument;
-                                baseMapperMap.put(typeClass.getTypeName(), baseMapper);
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-
 }

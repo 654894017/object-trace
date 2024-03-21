@@ -1,6 +1,8 @@
 package com.damon.object_trace;
 
-public interface ID {
+public interface ID<T> {
 
-    Long getId();
+    T getId();
+
+    void setId(T id);
 }

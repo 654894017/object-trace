@@ -13,11 +13,11 @@ public class AggregateFactory {
         throw new IllegalStateException("A factory class, please use static method");
     }
 
-    public static <R extends Version> Aggregate<R> createAggregate(R root) {
+    public static <R extends Versionable> Aggregate<R> createAggregate(R root) {
         return new Aggregate(root, deepCopier, deepComparator);
     }
 
-    public static <R extends Version> Aggregate<R> createAggregate(R root, DeepCopier deepCopier, DeepComparator deepComparator) {
+    public static <R extends Versionable> Aggregate<R> createAggregate(R root, DeepCopier deepCopier, DeepComparator deepComparator) {
         return new Aggregate(root, deepCopier, deepComparator);
     }
 

@@ -1,4 +1,4 @@
-# object trace
+# object-trace
 
 可参考：
 
@@ -7,13 +7,11 @@
 
 ## 1. 简介
 
-领域驱动设计(DDD)已经被业界认为是行之有效的复杂问题解决之道。随着微服务的流行，DDD也被更多的团队采纳。然而在DDD落地时，聚合(
-Aggregate)的持久化一直缺少一种优雅的方式解决。
+领域驱动设计(DDD)已经被业界认为是行之有效的复杂问题解决之道。随着微服务的流行，DDD也被更多的团队采纳。然而在DDD落地时，聚合(Aggregate)的持久化一直缺少一种优雅的方式解决。
 
 在DDD实践中，聚合应该作为一个完整的单元进行读取和持久化，以确保业务的不变性或者说业务规则不变破坏。例如，订单总金额应该与订单明细金额之和一致。
 
-由于领域模型和数据库的数据模型可能不一致，并且聚合可能涉及多个实体，因此Hibernate, MyBatis和Spring
-Data等框架直接用于聚合持久化时，总是面临一些困难，而且代码也不够优雅。有人认为NoSQL是最适合聚合持久化的方案。确实如此，每个聚合实例就是一个文档，NoSQL天然为聚合持久化提供了很好的支持。然而并不是所有系统都适合用NoSQL。当遇到关系型数据库时，一种方式是将领域事件引入持久化过程。也就是在处理业务过程中，聚合抛出领域事件，Repository根据领域事件的不同，执行不同的SQL，完成数据库的修改。但这样的话，Repository层就要引入一些逻辑判断，代码冗余增加了维护成本。
+由于领域模型和数据库的数据模型可能不一致，并且聚合可能涉及多个实体，因此Hibernate, MyBatis和Spring Data等框架直接用于聚合持久化时，总是面临一些困难，而且代码也不够优雅。有人认为NoSQL是最适合聚合持久化的方案。确实如此，每个聚合实例就是一个文档，NoSQL天然为聚合持久化提供了很好的支持。然而并不是所有系统都适合用NoSQL。当遇到关系型数据库时，一种方式是将领域事件引入持久化过程。也就是在处理业务过程中，聚合抛出领域事件，Repository根据领域事件的不同，执行不同的SQL，完成数据库的修改。但这样的话，Repository层就要引入一些逻辑判断，代码冗余增加了维护成本。
 
 本项目旨在提供一种轻量级聚合持久化方案，帮助开发者真正从业务出发设计领域模型，不需要考虑持久化的事情。在实现Repository持久化时，不需要考虑业务逻辑，只负责聚合的持久化，从而真正做到关注点分离。
 **也就是说，不论有多少个业务场景对聚合进行了修改，对聚合的持久化只需要一个方法。**
@@ -100,6 +98,9 @@ public class OrderGateway extends MybatisRepositorySupport implements IOrderGate
 * `public R getRootSnapshot()`: 获取聚合根的历史快照
 * `public boolean isChanged()`: 聚合是否发生了变化
 * `public boolean isNew()`：是否为新的聚合 (暂不支持)
+  
+`ObjectComparator`用于比较对象之间的差异，用户处理新增、修改、删除的实体，包括实体修改了，可以获取变动的属性。它提供以下功能：
+
 * `public <T> Collection<T> findNewEntitiesById(Function<R, Collection<T>> getCollection, Function<T, ID> getId)`
   ：在实体集合（例如订单的所有订单明细行中）找到新的实体
 * `public <T, ID> Collection<T> findChangedEntities(Function<R, Collection<T>> getCollection, Function<T, ID> getId)`
@@ -114,14 +115,14 @@ public class OrderGateway extends MybatisRepositorySupport implements IOrderGate
 与Hibernate的`@Version`类似，聚合根需要实现Versionable接口，以便Repository基于Version实现乐观锁。Repository对聚合的所有持久化操作，都要判断Version。示意SQL如下：
 
 ```sql
-    insert into person (id, name, age, address, version )
-    values (#{id}, #{name}, #{age}, #{address}, 1)
+insert into person (id, name, age, address, version )
+values (#{id}, #{name}, #{age}, #{address}, 1)
 
-    update person set age = #{age}, address = #{address}, version = version + 1
-    where id = #{id} and version = #{version}
-    
-    delete person
-    where id = #{id} and version = #{version}
+update person set age = #{age}, address = #{address}, version = version + 1
+where id = #{id} and version = #{version}
+
+delete person
+where id = #{id} and version = #{version}
 ``` 
 
 ## 2. 使用object-trace
@@ -129,18 +130,18 @@ public class OrderGateway extends MybatisRepositorySupport implements IOrderGate
 在项目中加入以下依赖，就可以使用object-trace的功能了：
 
 ```xml
-        <dependency>
-            <groupId>com.damon</groupId>
-            <artifactId>object-trace</artifactId>
-            <version>1.1.0</version>
-        </dependency>
+<dependency>
+    <groupId>com.damon</groupId>
+    <artifactId>object-trace</artifactId>
+    <version>1.1.0</version>
+</dependency>
 ```
 
 ## 3. 使用示例
 
 object-trace 本身并不负责持久化工作，它是一个工具，用于识别聚合的变更，例如发现有新增、修改和删除的实体，真正的持久化工作由你的Repository实现。
-完整的示例代码见[订单聚合持久化项目](https://github.com/654894017/object-trace/tree/master/src/test/java/com/damon/order)
-，该示例演示了如何运用Mybatis实现聚合的持久化，并且只持久化那些修改的数据。例如一个表有20个字段，只有1个字段修改了，采用此方案时，只会修改数据库的一个字段，而非所有字段。
+完整的示例代码见[订单聚合持久化项目](https://github.com/654894017/object-trace/tree/master/src/test/java/com/damon/order)，该示例演示了如何运用Mybatis实现聚合的持久化，并且只持久化那些修改的数据。
+例如一个表有20个字段，只有1个字段修改了，采用此方案时，只会修改数据库的一个字段，而非所有字段。
 
 ## 4. 总结
 

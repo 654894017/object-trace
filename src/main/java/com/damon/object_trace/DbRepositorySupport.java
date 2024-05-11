@@ -29,7 +29,7 @@ public abstract class DbRepositorySupport {
     public <A extends Versionable, B> Boolean executeSafeUpdate(B newObj, B oldObj, Function<B, A> function) {
         A newObject = function.apply(newObj);
         A oldObject = function.apply(oldObj);
-        Set<String> changedFields = ObjectComparator.findChangedFields(newObject, oldObject, true);
+        Set<String> changedFields = ObjectComparator.findChangedFields(newObject, oldObject, false);
         return update(newObject, changedFields);
     }
 

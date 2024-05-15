@@ -3,6 +3,7 @@ package com.damon.object_trace;
 
 import com.damon.object_trace.comparator.DeepComparator;
 import com.damon.object_trace.copier.DeepCopier;
+import org.apache.commons.lang3.builder.EqualsBuilder;
 
 public class Aggregate<R extends Versionable> {
     private final int NEW_VERSION = 0;
@@ -25,7 +26,9 @@ public class Aggregate<R extends Versionable> {
      * @return true if the aggregate is changed, false if the aggregate is unchanged.
      */
     public boolean isChanged() {
-        return !deepComparator.isDeepEquals(root, snapshot);
+//        Boolean result= Objects.deepEquals(root, snapshot);
+///        return !deepComparator.isDeepEquals(root, snapshot);
+        return !EqualsBuilder.reflectionEquals(root, snapshot, false);
     }
 
 //    public boolean isNew() {

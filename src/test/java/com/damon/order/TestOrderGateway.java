@@ -22,17 +22,15 @@ public class TestOrderGateway {
 
     @Test
     public void test() {
-        Aggregate<Order> orderAggregate = orderGateway.get(new OrderId(1L));
+        Aggregate<Order> orderAggregate = orderGateway.get(new OrderId(2L));
         Order order = orderAggregate.getRoot();
         order.setStatus(order.getStatus() + 1);
         List<OrderItem> item = order.getOrderItems();
-        item.add(new OrderItem(IdUtil.getSnowflakeNextId(), 1l, 1l, "1", 1, 1l));
+        item.add(new OrderItem(IdUtil.getSnowflakeNextId(), 2l, 1l, "1", 1, 1l));
         item.get(1).setGoodsId(IdUtil.getSnowflakeNextId());
         item.remove(0);
         orderGateway.save(orderAggregate);
 
     }
-
-
 
 }

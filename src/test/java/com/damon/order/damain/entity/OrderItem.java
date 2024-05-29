@@ -31,6 +31,7 @@ public class OrderItem {
         this.amount = amount;
         this.price = price;
     }
+
     public OrderItem() {
     }
 }

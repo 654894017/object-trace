@@ -12,21 +12,16 @@ import com.damon.object_trace.Versionable;
 import org.apache.ibatis.session.SqlSession;
 import org.mybatis.spring.SqlSessionUtils;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class MybatisRepositorySupport extends DbRepositorySupport {
     @Override
-    protected <A extends ID> Boolean deleteBatch(List<A> removedItem) {
-        Set<Object> removedItemIds = removedItem.stream().map(A::getId).collect(Collectors.toSet());
-        Map<String, Object> map = CollectionUtils.newHashMapWithExpectedSize(1);
-        map.put(Constants.COLL, removedItemIds);
-        Class<?> clazz = removedItem.get(0).getClass();
+    protected <A extends ID> Boolean delete(A item) {
+        Class<?> clazz = item.getClass();
         SqlSession sqlSession = getSqlSession(clazz);
         try {
-            return SqlHelper.retBool(sqlSession.delete(sqlStatement(SqlMethod.DELETE_BATCH_BY_IDS.getMethod(), clazz), map));
+            return SqlHelper.retBool(sqlSession.delete(sqlStatement(SqlMethod.DELETE_BY_ID.getMethod(), clazz), item));
         } finally {
             closeSqlSession(sqlSession, clazz);
         }
@@ -55,6 +50,14 @@ public class MybatisRepositorySupport extends DbRepositorySupport {
 
     }
 
+    /**
+     * 未带版本号的更新
+     *
+     * @param entity
+     * @param changedFields
+     * @param <A>
+     * @return
+     */
     @Override
     protected <A extends ID> Boolean update(A entity, Set<String> changedFields) {
         A newEntity = (A) ReflectUtil.newInstance(entity.getClass());
@@ -70,6 +73,14 @@ public class MybatisRepositorySupport extends DbRepositorySupport {
         }
     }
 
+    /**
+     * 带版本version的安全更新
+     *
+     * @param entity
+     * @param changedFields
+     * @param <A>
+     * @return
+     */
     @Override
     protected <A extends Versionable> Boolean update(A entity, Set<String> changedFields) {
         A newEntity = (A) ReflectUtil.newInstance(entity.getClass());

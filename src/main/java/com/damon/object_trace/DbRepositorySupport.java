@@ -1,12 +1,13 @@
 package com.damon.object_trace;
 
+
 import com.damon.object_trace.comparator.ChangedEntity;
 import com.damon.object_trace.comparator.ObjectComparator;
 import com.damon.object_trace.utils.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -52,6 +53,8 @@ public abstract class DbRepositorySupport {
 
     /**
      * 列表模式的增量更新(自动处理新增、修改、删除的实体)
+     * <br>
+     * 注意: 如果id在数据库里不存在则进行新增操作
      *
      * @param newItem
      * @param oldItem
@@ -60,9 +63,10 @@ public abstract class DbRepositorySupport {
      * @param <B>
      * @return
      */
-    public <A extends ID, B> Boolean executeUpdateList(B newItem, B oldItem, Function<B, List<A>> convert) {
+    public <A extends ID, B> Boolean executeUpdateList(B newItem, B oldItem, Function<B, Collection<A>> convert) {
         return executeUpdateList(newItem, oldItem, convert, null);
     }
+
 
     /**
      * 列表模式的增量更新(自动处理新增、修改、删除的实体)
@@ -70,21 +74,25 @@ public abstract class DbRepositorySupport {
      * @param newItem
      * @param oldItem
      * @param convert
-     * @param predicate
-     * @param <A>
+     * @param isNew
+     * @param <T>
      * @param <B>
      * @return
      */
-    public <A extends ID, B> Boolean executeUpdateList(B newItem, B oldItem, Function<B, List<A>> convert, Predicate<A> predicate) {
-        List<A> newItems = convert.apply(newItem);
-        List<A> oldItems = convert.apply(oldItem);
-        List<A> itemPOS;
-        if (predicate == null) {
-            itemPOS = ObjectComparator.findNewEntities(newItems, oldItems, A::getId);
+    public <T extends ID, B> Boolean executeUpdateList(B newItem,
+                                                       B oldItem,
+                                                       Function<B, Collection<T>> convert,
+                                                       Predicate<T> isNew
+    ) {
+        Collection<T> newItems = convert.apply(newItem);
+        Collection<T> oldItems = convert.apply(oldItem);
+        Collection<T> itemPOS;
+        if (isNew == null) {
+            itemPOS = ObjectComparator.findNewEntities(newItems, oldItems);
         } else {
-            itemPOS = ObjectComparator.findNewEntities(newItems, predicate::test);
+            itemPOS = ObjectComparator.findNewEntities(newItems, isNew::test);
         }
-        for (A item : itemPOS) {
+        for (T item : itemPOS) {
             Boolean result = insert(item);
             if (!result) {
                 log.warn("create item failed, type: {} , info : {}", item.getClass().getTypeName(), JsonUtils.jsonToString(item));
@@ -92,8 +100,8 @@ public abstract class DbRepositorySupport {
             }
         }
 
-        List<ChangedEntity<A>> changedEntityList = ObjectComparator.findChangedEntities(newItems, oldItems, A::getId);
-        for (ChangedEntity<A> changedEntity : changedEntityList) {
+        Collection<ChangedEntity<T>> changedEntityList = ObjectComparator.findChangedEntities(newItems, oldItems);
+        for (ChangedEntity<T> changedEntity : changedEntityList) {
             Set<String> changedFields = ObjectComparator.findChangedFields(changedEntity.getNewEntity(), changedEntity.getOldEntity());
             if (!changedFields.isEmpty()) {
                 Boolean result = update(changedEntity.getNewEntity(), changedFields);
@@ -106,19 +114,24 @@ public abstract class DbRepositorySupport {
             }
         }
 
-        List<A> removedItems = ObjectComparator.findRemovedEntities(newItems, oldItems, A::getId);
-        if (!removedItems.isEmpty()) {
-            Boolean result = deleteBatch(removedItems);
+        Collection<T> removedItems = ObjectComparator.findRemovedEntities(newItems, oldItems);
+        if (removedItems.isEmpty()) {
+            return Boolean.TRUE;
+        }
+
+        for (T item : removedItems) {
+            Boolean result = this.delete(item);
             if (!result) {
-                Set<Object> removedItemIds = removedItems.stream().map(A::getId).collect(Collectors.toSet());
-                log.warn("delete item failed, type: {} , ids : {}", removedItems.get(0).getClass().getTypeName(), removedItemIds);
+                Set<Object> removedItemIds = removedItems.stream().map(T::getId).collect(Collectors.toSet());
+                log.warn("delete item failed, type: {} , ids : {}", item.getClass().getTypeName(), removedItemIds);
                 return Boolean.FALSE;
             }
         }
+
         return Boolean.TRUE;
     }
 
-    protected abstract <A extends ID> Boolean deleteBatch(List<A> removedItems);
+    protected abstract <A extends ID> Boolean delete(A item);
 
     protected abstract <A extends ID> Boolean insert(A entity);
 

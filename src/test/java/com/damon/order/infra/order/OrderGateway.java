@@ -14,7 +14,6 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public class OrderGateway extends MybatisRepositorySupport implements IOrderGateway {
@@ -57,6 +56,7 @@ public class OrderGateway extends MybatisRepositorySupport implements IOrderGate
         }
         Order root = orderAggregate.getRoot();
         Order snapshot = orderAggregate.getSnapshot();
+
         Boolean result = super.executeSafeUpdate(root, snapshot, OrderFactory::convert);
         if (!result) {
             throw new RuntimeException(String.format("Update order (%s) error, it's not found or changed by another user", orderAggregate.getRoot().getId()));

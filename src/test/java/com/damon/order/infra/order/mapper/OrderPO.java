@@ -11,7 +11,7 @@ import lombok.Data;
 
 @Data
 @TableName("demo_order")
-public class OrderPO implements Versionable<OrderPO, Long> {
+public class OrderPO implements Versionable<Long> {
     @Version
     private Integer version;
     private Long id;

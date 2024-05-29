@@ -1,7 +1,9 @@
 package com.damon.object_trace.comparator;
 
 import cn.hutool.core.util.StrUtil;
+import com.damon.object_trace.ID;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.reflect.FieldUtils;
 
 import java.lang.reflect.Field;
@@ -41,28 +43,38 @@ public class ObjectComparator {
         return differentProperties;
     }
 
-
-    public static <T, ID> List<T> findNewEntities(List<T> newEntities, List<T> oldEntities, Function<T, ID> getId) {
-        Set<ID> newIds = newEntities.stream().map(getId).collect(Collectors.toSet());
-        Set<ID> oldIds = oldEntities.stream().map(getId).collect(Collectors.toSet());
+    /**
+     * 查询列表新增的实体(默认ID为空或新列表中的ID在旧的列表中不存在都当新的实体处理)
+     *
+     *
+     *
+     * @param newEntities
+     * @param oldEntities
+     * @return
+     * @param <T>
+     */
+    public static <T extends ID> Collection<T> findNewEntities(Collection<T> newEntities, Collection<T> oldEntities) {
+        Set<Object> newIds = newEntities.stream().map(T::getId).collect(Collectors.toSet());
+        Set<Object> oldIds = oldEntities.stream().map(T::getId).collect(Collectors.toSet());
         newIds.removeAll(oldIds);
-        return newEntities.stream().filter((item) -> newIds.contains(getId.apply(item))).collect(Collectors.toList());
+        return newEntities.stream().filter((item) -> newIds.contains(item.getId()) || item.getId() == null).collect(Collectors.toList());
     }
 
-    public static <T> List<T> findNewEntities(List<T> newEntities, Predicate<T> predicate) {
+    public static <T extends ID> Collection<T> findNewEntities(Collection<T> newEntities, Predicate<T> predicate) {
         return newEntities.stream().filter(predicate).collect(Collectors.toList());
     }
 
-    public static <T, ID> List<T> findRemovedEntities(List<T> newEntities, List<T> oldEntities, Function<T, ID> getId) {
-        Set<ID> newIds = newEntities.stream().map(getId).collect(Collectors.toSet());
-        Set<ID> oldIds = oldEntities.stream().map(getId).collect(Collectors.toSet());
+    public static <T extends ID> Collection<T> findRemovedEntities(Collection<T> newEntities, Collection<T> oldEntities) {
+        Set<Object> newIds = newEntities.stream().map(T::getId).collect(Collectors.toSet());
+        Set<Object> oldIds = oldEntities.stream().map(T::getId).collect(Collectors.toSet());
         oldIds.removeAll(newIds);
-        return oldEntities.stream().filter((item) -> oldIds.contains(getId.apply(item))).collect(Collectors.toList());
+        return oldEntities.stream().filter((item) -> oldIds.contains(item.getId())).collect(Collectors.toList());
     }
 
-    public static <T, ID> List<ChangedEntity<T>> findChangedEntities(List<T> newEntities, List<T> oldEntities, Function<T, ID> getId) {
-        Map<ID, T> newEntityMap = newEntities.stream().collect(Collectors.toMap(getId, Function.identity()));
-        Map<ID, T> oldEntityMap = oldEntities.stream().collect(Collectors.toMap(getId, Function.identity()));
+    public static <T extends ID> Collection<ChangedEntity<T>> findChangedEntities(Collection<T> newEntities, Collection<T> oldEntities) {
+        Map<Object, T> newEntityMap = newEntities.stream().collect(Collectors.toMap(ID::getId, Function.identity()));
+        Map<Object, T> oldEntityMap = oldEntities.stream().collect(Collectors.toMap(ID::getId, Function.identity()));
+        //交集
         oldEntityMap.keySet().retainAll(newEntityMap.keySet());
         List<ChangedEntity<T>> results = new ArrayList();
         Iterator iterator = oldEntityMap.entrySet().iterator();
@@ -70,8 +82,7 @@ public class ObjectComparator {
             Map.Entry<ID, T> entry = (Map.Entry) iterator.next();
             T oldEntity = entry.getValue();
             T newEntity = newEntityMap.get(entry.getKey());
-            Set<String> list = findChangedFields(newEntity, oldEntity);
-            if (!list.isEmpty()) {
+            if (!EqualsBuilder.reflectionEquals(oldEntity, newEntity, false)) {
                 results.add(new ChangedEntity(oldEntity, newEntity));
             }
         }

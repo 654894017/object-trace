@@ -41,7 +41,7 @@ public class OrderFactory {
         OrderItemPO itemPO = new OrderItemPO();
         itemPO.setId(item.getId());
         itemPO.setGoodsName(item.getGoodsName());
-       // itemPO.setUpdateTime(item.getUpdateTime());
+        // itemPO.setUpdateTime(item.getUpdateTime());
         itemPO.setOrderId(item.getOrderId());
         itemPO.setGoodsId(item.getGoodsId());
         itemPO.setAmount(item.getAmount());

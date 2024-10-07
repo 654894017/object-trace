@@ -9,12 +9,10 @@ import java.util.List;
 
 @Data
 @ToString
-public class Order implements Versionable<Long> {
+public class Order{
 
     private Long id;
     private Integer status;
-    //    private Long createTime;
-//    private Long updateTime;
     private Consignee consignee;
     private List<OrderItem> orderItems;
     private Long totalMoney;

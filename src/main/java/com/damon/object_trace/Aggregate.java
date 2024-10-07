@@ -10,7 +10,7 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.function.Predicate;
 
-public class Aggregate<R extends Versionable> {
+public class Aggregate<R> {
     private final int NEW_VERSION = 0;
     private R root;
     private R snapshot;

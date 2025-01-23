@@ -1,7 +1,6 @@
 package com.damon.order.damain.entity;
 
 
-import com.damon.object_trace.Versionable;
 import lombok.Data;
 import lombok.ToString;
 
@@ -21,6 +20,6 @@ public class Order{
     private Long couponId;
     private Long deductionPoints;
     private Long orderSubmitUserId;
-    private Integer delete;
+    private Long deleted;
     private Long sellerId;
 }

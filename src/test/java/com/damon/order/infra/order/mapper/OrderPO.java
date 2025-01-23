@@ -1,10 +1,7 @@
 package com.damon.order.infra.order.mapper;
 
 
-import com.baomidou.mybatisplus.annotation.FieldFill;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableName;
-import com.baomidou.mybatisplus.annotation.Version;
+import com.baomidou.mybatisplus.annotation.*;
 import com.damon.object_trace.Versionable;
 import lombok.Data;
 
@@ -14,6 +11,7 @@ import lombok.Data;
 public class OrderPO implements Versionable<Long> {
     @Version
     private Integer version;
+    @TableId
     private Long id;
     private Integer status;
     @TableField(fill = FieldFill.INSERT)
@@ -28,6 +26,6 @@ public class OrderPO implements Versionable<Long> {
     private Long couponId;
     private Long deductionPoints;
     private Long orderSubmitUserId;
-    private Integer isDelete;
+    private Long deleted;
     private Long sellerId;
 }

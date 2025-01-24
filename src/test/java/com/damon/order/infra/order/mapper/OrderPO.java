@@ -9,6 +9,7 @@ import lombok.Data;
 @Data
 @TableName("demo_order")
 public class OrderPO implements Versionable<Long> {
+    private static final long serialVersionUID = 1L;
     @Version
     private Integer version;
     @TableId

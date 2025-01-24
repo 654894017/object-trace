@@ -30,7 +30,6 @@ public class TestOrderGateway {
         item.get(1).setGoodsId(IdUtil.getSnowflakeNextId());
         item.remove(0);
         orderGateway.save(orderAggregate);
-
     }
 
 }

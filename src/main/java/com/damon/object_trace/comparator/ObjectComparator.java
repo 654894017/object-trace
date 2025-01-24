@@ -1,12 +1,15 @@
 package com.damon.object_trace.comparator;
 
+import cn.hutool.core.util.ReflectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.damon.object_trace.ID;
+import com.damon.object_trace.exception.ObjectTraceException;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.reflect.FieldUtils;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -24,11 +27,14 @@ public class ObjectComparator {
             Class<?> clazz = newObject.getClass();
             Field[] fields = FieldUtils.getAllFields(clazz);
             for (Field field : fields) {
+                if (Modifier.isStatic(field.getModifiers())) {
+                    continue;
+                }
                 field.setAccessible(true);
                 try {
                     Object newValue = field.get(newObject);
-                    Object oldeValue = field.get(oldObject);
-                    if (ObjectUtils.notEqual(newValue, oldeValue)) {
+                    Object oldValue = field.get(oldObject);
+                    if (!isEquals(newValue, oldValue)) {
                         if (toUnderlineCase) {
                             differentProperties.add(StrUtil.toUnderlineCase(field.getName()));
                         } else {
@@ -36,7 +42,7 @@ public class ObjectComparator {
                         }
                     }
                 } catch (Exception e) {
-                    throw new RuntimeException(field.getName(), e);
+                    throw new ObjectTraceException(field.getName(), e);
                 }
             }
         }
@@ -44,14 +50,26 @@ public class ObjectComparator {
     }
 
     /**
+     * 对象为字符串时:  null == ''
+     *
+     * @param newValue
+     * @param oldValue
+     * @return
+     */
+    private static boolean isEquals(Object newValue, Object oldValue) {
+        if (newValue == null && StrUtil.EMPTY.equals(oldValue)) {
+            return true;
+        }
+        return !ObjectUtils.notEqual(newValue, oldValue);
+    }
+
+    /**
      * 查询列表新增的实体(默认ID为空或新列表中的ID在旧的列表中不存在都当新的实体处理)
-     *
-     *
      *
      * @param newEntities
      * @param oldEntities
-     * @return
      * @param <T>
+     * @return
      */
     public static <T extends ID> Collection<T> findNewEntities(Collection<T> newEntities, Collection<T> oldEntities) {
         Set<Object> newIds = newEntities.stream().map(T::getId).collect(Collectors.toSet());
@@ -88,4 +106,6 @@ public class ObjectComparator {
         }
         return results;
     }
+
+
 }

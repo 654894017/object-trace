@@ -12,7 +12,5 @@ public interface IOrderGateway {
     /**
      * @param orderAggregate
      */
-    void save(Aggregate<Order> orderAggregate);
-
-    void create(Aggregate<Order> orderAggregate);
+    Long save(Aggregate<Order> orderAggregate);
 }

@@ -63,7 +63,7 @@ public abstract class DbRepositorySupport {
      * @param <B>
      * @return
      */
-    public <A extends ID, B> Boolean executeUpdateList(B newItem, B oldItem, Function<B, Collection<A>> convert) {
+    public <A extends ID, B extends ID> Boolean executeUpdateList(Collection<B> newItem, Collection<B> oldItem, Function<B, A> convert) {
         return executeUpdateList(newItem, oldItem, convert, null);
     }
 
@@ -79,56 +79,57 @@ public abstract class DbRepositorySupport {
      * @param <B>
      * @return
      */
-    public <T extends ID, B> Boolean executeUpdateList(B newItem,
-                                                       B oldItem,
-                                                       Function<B, Collection<T>> convert,
-                                                       Predicate<T> isNew
-    ) {
-        Collection<T> newItems = convert.apply(newItem);
-        Collection<T> oldItems = convert.apply(oldItem);
-        Collection<T> itemPOS;
+    public <T extends ID, B extends ID> Boolean executeUpdateList(Collection<B> newItem, Collection<B> oldItem,
+                                                                  Function<B, T> convert, Predicate<B> isNew) {
+        Collection<B> newAddItems;
         if (isNew == null) {
-            itemPOS = ObjectComparator.findNewEntities(newItems, oldItems);
+            newAddItems = ObjectComparator.findNewEntities(newItem, oldItem);
         } else {
-            itemPOS = ObjectComparator.findNewEntities(newItems, isNew::test);
+            newAddItems = ObjectComparator.findNewEntities(newItem, isNew::test);
         }
-        for (T item : itemPOS) {
-            Boolean result = insert(item);
+        for (B item : newAddItems) {
+            T itemPO = convert.apply(item);
+            boolean result = insert(itemPO);
+            item.setId(itemPO.getId());
             if (!result) {
-                log.warn("create item failed, type: {} , info : {}", item.getClass().getTypeName(), JsonUtils.jsonToString(item));
-                return Boolean.FALSE;
+                log.warn("Create item failed, type: {} , info : {}", item.getClass().getTypeName(), JsonUtils.jsonToString(item));
+                return false;
             }
         }
-
+        newItem.removeAll(newAddItems);
+        Collection<T> newItems = newItem.stream().map(convert::apply).collect(Collectors.toList());
+        Collection<T> oldItems = oldItem.stream().map(convert::apply).collect(Collectors.toList());
         Collection<ChangedEntity<T>> changedEntityList = ObjectComparator.findChangedEntities(newItems, oldItems);
         for (ChangedEntity<T> changedEntity : changedEntityList) {
             Set<String> changedFields = ObjectComparator.findChangedFields(changedEntity.getNewEntity(), changedEntity.getOldEntity());
-            if (!changedFields.isEmpty()) {
-                Boolean result = update(changedEntity.getNewEntity(), changedFields);
-                if (!result) {
-                    log.warn("update item failed, type: {} , info : {} ,change fields : {}",
-                            changedEntity.getNewEntity().getClass().getTypeName(), JsonUtils.jsonToString(changedEntity.getNewEntity()), changedFields
-                    );
-                    return Boolean.FALSE;
-                }
+            if (changedFields.isEmpty()) {
+                continue;
+            }
+            boolean result = update(changedEntity.getNewEntity(), changedFields);
+            if (!result) {
+                log.warn("Update item failed, type: {} , info : {} ,change fields : {}",
+                        changedEntity.getNewEntity().getClass().getTypeName(),
+                        JsonUtils.jsonToString(changedEntity.getNewEntity()), changedFields
+                );
+                return false;
             }
         }
 
         Collection<T> removedItems = ObjectComparator.findRemovedEntities(newItems, oldItems);
         if (removedItems.isEmpty()) {
-            return Boolean.TRUE;
+            return true;
         }
 
         for (T item : removedItems) {
-            Boolean result = this.delete(item);
+            boolean result = this.delete(item);
             if (!result) {
                 Set<Object> removedItemIds = removedItems.stream().map(T::getId).collect(Collectors.toSet());
-                log.warn("delete item failed, type: {} , ids : {}", item.getClass().getTypeName(), removedItemIds);
-                return Boolean.FALSE;
+                log.warn("Delete item failed, type: {} , ids : {}", item.getClass().getTypeName(), removedItemIds);
+                return false;
             }
         }
 
-        return Boolean.TRUE;
+        return true;
     }
 
     protected abstract <A extends ID> Boolean delete(A item);

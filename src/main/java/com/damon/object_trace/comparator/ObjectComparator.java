@@ -1,12 +1,11 @@
 package com.damon.object_trace.comparator;
 
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.ReflectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.damon.object_trace.ID;
 import com.damon.object_trace.exception.ObjectTraceException;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.reflect.FieldUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -25,7 +24,7 @@ public class ObjectComparator {
         Set<String> differentProperties = new HashSet<>();
         if (newObject != null && oldObject != null && newObject.getClass().equals(oldObject.getClass())) {
             Class<?> clazz = newObject.getClass();
-            Field[] fields = FieldUtils.getAllFields(clazz);
+            Field[] fields = ReflectUtil.getFields(clazz);
             for (Field field : fields) {
                 if (Modifier.isStatic(field.getModifiers())) {
                     continue;
@@ -60,7 +59,7 @@ public class ObjectComparator {
         if (newValue == null && StrUtil.EMPTY.equals(oldValue)) {
             return true;
         }
-        return !ObjectUtils.notEqual(newValue, oldValue);
+        return ObjectUtil.equal(newValue, oldValue);
     }
 
     /**

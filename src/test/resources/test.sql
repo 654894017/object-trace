@@ -12,7 +12,7 @@ CREATE TABLE `demo_order` (
   `coupon_id` bigint DEFAULT NULL,
   `deduction_points` bigint DEFAULT NULL,
   `order_submit_user_id` bigint DEFAULT NULL,
-  `is_delete` int DEFAULT NULL,
+  `deleted` bigint DEFAULT NULL,
   `seller_id` bigint DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
@@ -26,12 +26,12 @@ CREATE TABLE `demo_order_item` (
   `amount` int DEFAULT NULL,
   `price` bigint DEFAULT NULL,
   `update_time` bigint DEFAULT NULL,
+  `is_delete` bigint DEFAULT '0',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
+INSERT INTO `demo_order` (`version`, `id`, `status`, `create_time`, `update_time`, `consignee_name`, `consignee_shipping_address`, `consignee_mobile`, `total_money`, `actual_pay_money`, `coupon_id`, `deduction_points`, `order_submit_user_id`, `is_delete`, `seller_id`) VALUES (38, 2, 8, 1703658608810, 111, '111', '1', '18050194863', 1, 1, 1, 1, 1, 0, 1);
 
-INSERT INTO `demo_order` (`version`, `id`, `status`, `create_time`, `update_time`, `consignee_name`, `consignee_shipping_address`, `consignee_mobile`, `total_money`, `actual_pay_money`, `coupon_id`, `deduction_points`, `order_submit_user_id`, `is_delete`, `seller_id`) VALUES (38, 1, 8, 1703658608810, 111, '111', '1', '18050194863', 1, 1, 1, 1, 1, 0, 1);
 
-
-INSERT INTO `demo_order_item` (`id`, `order_id`, `goods_id`, `goods_name`, `amount`, `price`, `update_time`) VALUES (1770327803288502272, 1, 1770333256328372225, '1', 1, 1, 1710915314194);
-INSERT INTO `demo_order_item` (`id`, `order_id`, `goods_id`, `goods_name`, `amount`, `price`, `update_time`) VALUES (1770333256328372224, 1, 1, '1', 1, 1, 1710915314167);
+INSERT INTO `demo_order_item` (`id`, `order_id`, `goods_id`, `goods_name`, `amount`, `price`, `update_time`) VALUES (1770327803288502272, 2, 1770333256328372225, '1', 1, 1, 1710915314194);
+INSERT INTO `demo_order_item` (`id`, `order_id`, `goods_id`, `goods_name`, `amount`, `price`, `update_time`) VALUES (1770333256328372224, 2, 1, '1', 1, 1, 1710915314167);

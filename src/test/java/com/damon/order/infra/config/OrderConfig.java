@@ -35,7 +35,7 @@ public class OrderConfig {
     public SqlSessionFactory sqlSessionFactory(DataSource dataSource) throws Exception {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
         interceptor.addInnerInterceptor(new OptimisticLockerInnerInterceptor());
-        interceptor.addInnerInterceptor(new DataChangeRecorderInnerInterceptor());
+      //  interceptor.addInnerInterceptor(new DataChangeRecorderInnerInterceptor());
         MybatisSqlSessionFactoryBean sessionFactory = new MybatisSqlSessionFactoryBean();
         sessionFactory.setPlugins(interceptor);
         sessionFactory.setDataSource(dataSource);

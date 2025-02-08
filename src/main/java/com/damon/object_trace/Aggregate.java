@@ -10,8 +10,8 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.function.Predicate;
 
-public class Aggregate<R> {
-    private final int NEW_VERSION = 0;
+public class Aggregate<R extends Versionable> {
+    public static final int NEW_VERSION = 0;
     private R root;
     private R snapshot;
 
@@ -29,13 +29,13 @@ public class Aggregate<R> {
      * @return true if the aggregate is changed, false if the aggregate is unchanged.
      */
     public boolean isChanged() {
-        //        return !deepComparator.isDeepEquals(root, snapshot);
         return !EqualsBuilder.reflectionEquals(root, snapshot, false);
     }
 
-    //    public boolean isNew() {
-//        return root.getVersion() == NEW_VERSION;
-//    }
+    public boolean isNew() {
+        return root.getVersion() == NEW_VERSION || root.getVersion() == null;
+    }
+
     public <T extends ID> Collection<T> findNewEntities(Collection<T> newEntities, Collection<T> oldEntities) {
         return ObjectComparator.findNewEntities(newEntities, oldEntities);
     }

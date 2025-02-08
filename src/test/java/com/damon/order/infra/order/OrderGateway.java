@@ -2,6 +2,8 @@ package com.damon.order.infra.order;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.damon.object_trace.Aggregate;
+import com.damon.object_trace.exception.EntityNotFoundException;
+import com.damon.object_trace.exception.OptimisticLockException;
 import com.damon.object_trace.mybatis.MybatisRepositorySupport;
 import com.damon.order.damain.IOrderGateway;
 import com.damon.order.damain.entity.Order;
@@ -29,42 +31,48 @@ public class OrderGateway extends MybatisRepositorySupport implements IOrderGate
     public Aggregate<Order> get(OrderId orderId) {
         OrderPO orderPO = orderMapper.selectById(orderId.getId());
         if (orderPO == null) {
-            return null;
+            throw new EntityNotFoundException(String.format("Order (%s) is not found", orderId.getId()));
         }
         List<OrderItemPO> orderItemPOList = orderItemMapper.selectList(
                 new LambdaQueryWrapper<OrderItemPO>().eq(OrderItemPO::getOrderId, orderId.getId()));
         return OrderFactory.convert(orderPO, orderItemPOList);
     }
 
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void create(Aggregate<Order> orderAggregate) {
+    private Long create(Aggregate<Order> orderAggregate) {
         Order root = orderAggregate.getRoot();
         OrderPO orderPO = OrderFactory.convert(root);
-        orderMapper.insert(orderPO);
+        super.insert(orderPO);
         root.getOrderItems().forEach(orderItem -> {
-            OrderItemPO orderItemPO = OrderFactory.convertPO(orderItem);
-            orderItemMapper.insert(orderItemPO);
+            orderItem.setOrderId(orderPO.getId());
+            OrderItemPO orderItemPO = OrderFactory.convert(orderItem);
+            super.insert(orderItemPO);
         });
+        return orderPO.getId();
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void save(Aggregate<Order> orderAggregate) {
-        if (!orderAggregate.isChanged()) {
-            return;
+    public Long save(Aggregate<Order> aggregate) {
+        if (aggregate.isNew()) {
+            return create(aggregate);
         }
+        if (!aggregate.isChanged()) {
+            return aggregate.getRoot().getId();
+        }
+        return update(aggregate);
+    }
+
+    private Long update(Aggregate<Order> orderAggregate) {
         Order root = orderAggregate.getRoot();
         Order snapshot = orderAggregate.getSnapshot();
-
         Boolean result = super.executeSafeUpdate(root, snapshot, OrderFactory::convert);
-        if (!result) {
-            throw new RuntimeException(String.format("Update order (%s) error, it's not found or changed by another user", orderAggregate.getRoot().getId()));
+        Boolean result2 = super.executeUpdateList(root.getOrderItems(), snapshot.getOrderItems(), item -> {
+            item.setOrderId(root.getId());
+            return OrderFactory.convert(item);
+        });
+        if (!result2 && !result) {
+            throw new OptimisticLockException(String.format("Update order (%s) error, it's not found or changed by another user", orderAggregate.getRoot().getId()));
         }
-
-        Boolean result2 = super.executeUpdateList(root.getOrderItems(), snapshot.getOrderItems(), OrderFactory::convertPO);
-        if (!result2) {
-            throw new RuntimeException(String.format("Update order (%s) error, it's not found or changed by another user", orderAggregate.getRoot().getId()));
-        }
+        return root.getId();
     }
 }

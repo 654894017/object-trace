@@ -35,6 +35,10 @@ public class MybatisRepositorySupport extends DbRepositorySupport {
 
     @Override
     protected <A extends ID> Boolean insert(A entity) {
+        if (entity instanceof Versionable) {
+            Versionable versionableEntity = (Versionable) entity;
+            versionableEntity.setVersion(1);
+        }
         SqlSession sqlSession = getSqlSession(entity.getClass());
         try {
             return SqlHelper.retBool(sqlSession.insert(sqlStatement(SqlMethod.INSERT_ONE.getMethod(), entity.getClass()), entity));
@@ -53,7 +57,6 @@ public class MybatisRepositorySupport extends DbRepositorySupport {
 
     private SqlSession getSqlSession(Class<?> entityClass) {
         return SqlSessionUtils.getSqlSession(GlobalConfigUtils.currentSessionFactory(entityClass));
-
     }
 
     /**
@@ -70,7 +73,7 @@ public class MybatisRepositorySupport extends DbRepositorySupport {
         newEntity.setId(entity.getId());
         SqlSession sqlSession = getSqlSession(entity.getClass());
         Map<String, Object> map = CollectionUtils.newHashMapWithExpectedSize(1);
-        String primaryKey = ReflectUtils.getFieldNameByAnnotation(entity.getClass(), TableId.class);
+        String primaryKey = getPrimaryKey(entity.getClass());
         if (primaryKey == null) {
             throw new ObjectTraceException("Entity not found with the primary key annotation. entity : " + entity.getClass().getName());
         }
@@ -103,7 +106,7 @@ public class MybatisRepositorySupport extends DbRepositorySupport {
         SqlSession sqlSession = getSqlSession(entity.getClass());
         Map<String, Object> map = CollectionUtils.newHashMapWithExpectedSize(1);
         // 创建 UpdateWrapper 对象以指定更新条件
-        String primaryKey = ReflectUtils.getFieldNameByAnnotation(entity.getClass(), TableId.class);
+        String primaryKey = getPrimaryKey(entity.getClass());
         if (primaryKey == null) {
             throw new ObjectTraceException("Entity not found with the primary key annotation. entity : " + entity.getClass().getName());
         }
@@ -117,5 +120,8 @@ public class MybatisRepositorySupport extends DbRepositorySupport {
         } finally {
             closeSqlSession(sqlSession, entity.getClass());
         }
+    }
+    private String getPrimaryKey(Class<?> entityClass) {
+        return ReflectUtils.getFieldNameByAnnotation(entityClass, TableId.class);
     }
 }

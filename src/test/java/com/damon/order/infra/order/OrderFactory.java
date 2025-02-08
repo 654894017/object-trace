@@ -21,8 +21,6 @@ public class OrderFactory {
         orderPO.setConsigneeMobile(order.getConsignee().getMobile());
         orderPO.setConsigneeName(order.getConsignee().getName());
         orderPO.setConsigneeShippingAddress(order.getConsignee().getShippingAddress());
-//        orderPO.setCreateTime(order.getCreateTime());
-//        orderPO.setUpdateTime(order.getUpdateTime());
         orderPO.setDeductionPoints(order.getDeductionPoints());
         orderPO.setSellerId(order.getSellerId());
         orderPO.setTotalMoney(order.getTotalMoney());
@@ -33,15 +31,10 @@ public class OrderFactory {
         return orderPO;
     }
 
-    public static List<OrderItemPO> convertPO(@NonNull List<OrderItem> itemList) {
-        return itemList.stream().map(OrderFactory::convertPO).collect(Collectors.toList());
-    }
-
-    public static OrderItemPO convertPO(@NonNull OrderItem item) {
+    public static OrderItemPO convert(@NonNull OrderItem item) {
         OrderItemPO itemPO = new OrderItemPO();
         itemPO.setId(item.getId());
         itemPO.setGoodsName(item.getGoodsName());
-        // itemPO.setUpdateTime(item.getUpdateTime());
         itemPO.setOrderId(item.getOrderId());
         itemPO.setGoodsId(item.getGoodsId());
         itemPO.setAmount(item.getAmount());
@@ -61,8 +54,6 @@ public class OrderFactory {
         order.setConsignee(new Consignee(orderPO.getConsigneeName(), orderPO.getConsigneeShippingAddress(), orderPO.getConsigneeMobile()));
         order.setVersion(orderPO.getVersion());
         order.setStatus(orderPO.getStatus());
-//        order.setUpdateTime(orderPO.getUpdateTime());
-//        order.setCreateTime(orderPO.getCreateTime());
         order.setDeductionPoints(orderPO.getDeductionPoints());
         order.setCouponId(orderPO.getCouponId());
         order.setActualPayMoney(orderPO.getActualPayMoney());

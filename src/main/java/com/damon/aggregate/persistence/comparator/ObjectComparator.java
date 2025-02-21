@@ -1,10 +1,10 @@
-package com.damon.object_trace.comparator;
+package com.damon.aggregate.persistence.comparator;
 
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.ReflectUtil;
 import cn.hutool.core.util.StrUtil;
-import com.damon.object_trace.ID;
-import com.damon.object_trace.exception.ObjectTraceException;
+import com.damon.aggregate.persistence.ID;
+import com.damon.aggregate.persistence.exception.ObjectTraceException;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
 import java.lang.reflect.Field;
@@ -47,9 +47,11 @@ public class ObjectComparator {
         }
         return differentProperties;
     }
+
     private static boolean isValidComparison(Object obj1, Object obj2) {
         return obj1 != null && obj2 != null && obj1.getClass().equals(obj2.getClass());
     }
+
     /**
      * 对象为字符串时:  null == ''
      *

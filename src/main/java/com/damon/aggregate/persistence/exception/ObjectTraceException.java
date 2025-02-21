@@ -1,4 +1,4 @@
-package com.damon.object_trace.exception;
+package com.damon.aggregate.persistence.exception;
 
 public class ObjectTraceException extends RuntimeException {
     public ObjectTraceException(String message) {

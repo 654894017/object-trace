@@ -1,9 +1,9 @@
-package com.damon.object_trace;
+package com.damon.aggregate.persistence;
 
 
-import com.damon.object_trace.comparator.ChangedEntity;
-import com.damon.object_trace.comparator.ObjectComparator;
-import com.damon.object_trace.copier.DeepCopier;
+import com.damon.aggregate.persistence.comparator.ChangedEntity;
+import com.damon.aggregate.persistence.comparator.ObjectComparator;
+import com.damon.aggregate.persistence.copier.DeepCopier;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
 import java.util.Collection;

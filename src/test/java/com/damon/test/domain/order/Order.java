@@ -1,7 +1,7 @@
 package com.damon.test.domain.order;
 
 
-import com.damon.object_trace.Versionable;
+import com.damon.aggregate.persistence.Versionable;
 import lombok.Data;
 import lombok.ToString;
 

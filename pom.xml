@@ -3,11 +3,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.damon</groupId>
-    <artifactId>object-trace</artifactId>
+    <artifactId>aggregate-persistence</artifactId>
     <version>1.1.0</version>
     <packaging>jar</packaging>
 
-    <name>object-trace</name>
+    <name>aggregate-persistence</name>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <mybatis.plus.version>3.5.3.1</mybatis.plus.version>

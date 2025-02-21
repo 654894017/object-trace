@@ -1,6 +1,6 @@
-package com.damon.object_trace.copier;
+package com.damon.aggregate.persistence.copier;
 
-import com.damon.object_trace.utils.JsonUtils;
+import com.damon.aggregate.persistence.utils.JsonUtils;
 
 /**
  * Use Json to clone(deep copy) object.

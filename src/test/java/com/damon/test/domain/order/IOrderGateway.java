@@ -1,7 +1,7 @@
 package com.damon.test.domain.order;
 
 
-import com.damon.object_trace.Aggregate;
+import com.damon.aggregate.persistence.Aggregate;
 
 public interface IOrderGateway {
 

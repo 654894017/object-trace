@@ -1,4 +1,4 @@
-package com.damon.object_trace.exception;
+package com.damon.aggregate.persistence.exception;
 
 public class EntityNotFoundException extends ObjectTraceException {
     public EntityNotFoundException() {

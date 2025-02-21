@@ -1,4 +1,4 @@
-package com.damon.object_trace;
+package com.damon.aggregate.persistence;
 
 public interface ID<T> {
 

@@ -1,6 +1,6 @@
 package com.damon.test.domain.order;
 
-import com.damon.object_trace.ID;
+import com.damon.aggregate.persistence.ID;
 import lombok.Data;
 
 @Data

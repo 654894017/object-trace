@@ -1,10 +1,10 @@
 package com.damon.test.infrastructure.order;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.damon.object_trace.Aggregate;
-import com.damon.object_trace.exception.EntityNotFoundException;
-import com.damon.object_trace.exception.OptimisticLockException;
-import com.damon.object_trace.mybatis.MybatisRepositorySupport;
+import com.damon.aggregate.persistence.Aggregate;
+import com.damon.aggregate.persistence.exception.EntityNotFoundException;
+import com.damon.aggregate.persistence.exception.OptimisticLockException;
+import com.damon.aggregate.persistence.mybatis.MybatisRepositorySupport;
 import com.damon.test.domain.order.IOrderGateway;
 import com.damon.test.domain.order.Order;
 import com.damon.test.domain.order.OrderId;
@@ -12,7 +12,6 @@ import com.damon.test.infrastructure.order.mapper.OrderItemMapper;
 import com.damon.test.infrastructure.order.mapper.OrderItemPO;
 import com.damon.test.infrastructure.order.mapper.OrderMapper;
 import com.damon.test.infrastructure.order.mapper.OrderPO;
-
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 

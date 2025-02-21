@@ -1,4 +1,4 @@
-package com.damon.object_trace.mybatis;
+package com.damon.aggregate.persistence.mybatis;
 
 import cn.hutool.core.util.ReflectUtil;
 import cn.hutool.core.util.StrUtil;
@@ -9,11 +9,11 @@ import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.Constants;
 import com.baomidou.mybatisplus.core.toolkit.GlobalConfigUtils;
 import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
-import com.damon.object_trace.DbRepositorySupport;
-import com.damon.object_trace.ID;
-import com.damon.object_trace.Versionable;
-import com.damon.object_trace.exception.ObjectTraceException;
-import com.damon.object_trace.utils.ReflectUtils;
+import com.damon.aggregate.persistence.DbRepositorySupport;
+import com.damon.aggregate.persistence.ID;
+import com.damon.aggregate.persistence.Versionable;
+import com.damon.aggregate.persistence.exception.ObjectTraceException;
+import com.damon.aggregate.persistence.utils.ReflectUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.mybatis.spring.SqlSessionUtils;
 

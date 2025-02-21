@@ -1,4 +1,4 @@
-package com.damon.object_trace.utils;
+package com.damon.aggregate.persistence.utils;
 
 import cn.hutool.core.util.ReflectUtil;
 

@@ -1,4 +1,4 @@
-package com.damon.object_trace.comparator;
+package com.damon.aggregate.persistence.comparator;
 
 
 public class ChangedEntity<T> {

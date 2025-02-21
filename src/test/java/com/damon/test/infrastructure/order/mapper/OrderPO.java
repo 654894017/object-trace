@@ -2,7 +2,7 @@ package com.damon.test.infrastructure.order.mapper;
 
 
 import com.baomidou.mybatisplus.annotation.*;
-import com.damon.object_trace.Versionable;
+import com.damon.aggregate.persistence.Versionable;
 import lombok.Data;
 
 

@@ -1,14 +1,9 @@
 package com.damon.test;
 
 import cn.hutool.core.util.IdUtil;
-import com.damon.object_trace.Aggregate;
-import com.damon.object_trace.AggregateFactory;
-import com.damon.test.domain.order.Consignee;
-import com.damon.test.domain.order.IOrderGateway;
-import com.damon.test.domain.order.Order;
-import com.damon.test.domain.order.OrderId;
-import com.damon.test.domain.order.OrderItem;
-
+import com.damon.aggregate.persistence.Aggregate;
+import com.damon.aggregate.persistence.AggregateFactory;
+import com.damon.test.domain.order.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;

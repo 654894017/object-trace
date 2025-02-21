@@ -1,9 +1,9 @@
-package com.damon.object_trace;
+package com.damon.aggregate.persistence;
 
 
-import com.damon.object_trace.comparator.ChangedEntity;
-import com.damon.object_trace.comparator.ObjectComparator;
-import com.damon.object_trace.utils.JsonUtils;
+import com.damon.aggregate.persistence.comparator.ChangedEntity;
+import com.damon.aggregate.persistence.comparator.ObjectComparator;
+import com.damon.aggregate.persistence.utils.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

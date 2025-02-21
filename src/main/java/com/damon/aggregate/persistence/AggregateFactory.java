@@ -1,7 +1,7 @@
-package com.damon.object_trace;
+package com.damon.aggregate.persistence;
 
-import com.damon.object_trace.copier.DeepCopier;
-import com.damon.object_trace.copier.JsonDeepCopier;
+import com.damon.aggregate.persistence.copier.DeepCopier;
+import com.damon.aggregate.persistence.copier.JsonDeepCopier;
 
 public class AggregateFactory {
     private static DeepCopier deepCopier = new JsonDeepCopier();

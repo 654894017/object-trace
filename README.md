@@ -131,7 +131,7 @@ where id = #{id} and version = #{version}
 ## 3. 使用示例
 
 object-trace 本身并不负责持久化工作，它是一个工具，用于识别聚合的变更，例如发现有新增、修改和删除的实体，真正的持久化工作由你的Repository实现。
-完整的示例代码见[订单聚合持久化项目](https://github.com/654894017/object-trace/tree/master/src/test/java/com/damon/order)
+完整的示例代码见[订单聚合持久化项目](https://github.com/654894017/object-trace/blob/master/src/test/java/com/damon/test/TestOrderGateway.java)
 ，该示例演示了如何运用Mybatis实现聚合的持久化，并且只持久化那些修改的数据。
 例如一个表有20个字段，只有1个字段修改了，采用此方案时，只会修改数据库的一个字段，而非所有字段。
 

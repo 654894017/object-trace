@@ -19,6 +19,7 @@ import org.mybatis.spring.SqlSessionUtils;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 public class MybatisRepositorySupport extends DbRepositorySupport {
 
@@ -47,6 +48,12 @@ public class MybatisRepositorySupport extends DbRepositorySupport {
         }
     }
 
+    @Override
+    protected <A extends ID, B extends ID> Boolean insert(A entity, Function<A, B> function) {
+        B newEntity = function.apply(entity);
+        return insert(newEntity);
+    }
+
     private String sqlStatement(String sqlMethod, Class<?> entityClass) {
         return SqlHelper.table(entityClass).getSqlStatement(sqlMethod);
     }
@@ -72,7 +79,7 @@ public class MybatisRepositorySupport extends DbRepositorySupport {
         A newEntity = (A) ReflectUtil.newInstance(entity.getClass());
         newEntity.setId(entity.getId());
         SqlSession sqlSession = getSqlSession(entity.getClass());
-        Map<String, Object> map = CollectionUtils.newHashMapWithExpectedSize(1);
+        Map<String, Object> map = CollectionUtils.newHashMapWithExpectedSize(2);
         String primaryKey = getPrimaryKey(entity.getClass());
         if (primaryKey == null) {
             throw new ObjectTraceException("Entity not found with the primary key annotation. entity : " + entity.getClass().getName());
@@ -104,7 +111,7 @@ public class MybatisRepositorySupport extends DbRepositorySupport {
         newEntity.setId(entity.getId());
         newEntity.setVersion(entity.getVersion());
         SqlSession sqlSession = getSqlSession(entity.getClass());
-        Map<String, Object> map = CollectionUtils.newHashMapWithExpectedSize(1);
+        Map<String, Object> map = CollectionUtils.newHashMapWithExpectedSize(2);
         // 创建 UpdateWrapper 对象以指定更新条件
         String primaryKey = getPrimaryKey(entity.getClass());
         if (primaryKey == null) {
@@ -121,6 +128,7 @@ public class MybatisRepositorySupport extends DbRepositorySupport {
             closeSqlSession(sqlSession, entity.getClass());
         }
     }
+
     private String getPrimaryKey(Class<?> entityClass) {
         return ReflectUtils.getFieldNameByAnnotation(entityClass, TableId.class);
     }

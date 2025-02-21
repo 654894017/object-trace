@@ -1,4 +1,4 @@
-package com.damon.order.infra.config;
+package com.damon.test.config;
 
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import org.apache.ibatis.reflection.MetaObject;

@@ -1,17 +1,18 @@
-package com.damon.order.infra.order;
+package com.damon.test.infrastructure.order;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.damon.object_trace.Aggregate;
 import com.damon.object_trace.exception.EntityNotFoundException;
 import com.damon.object_trace.exception.OptimisticLockException;
 import com.damon.object_trace.mybatis.MybatisRepositorySupport;
-import com.damon.order.damain.IOrderGateway;
-import com.damon.order.damain.entity.Order;
-import com.damon.order.damain.entity.OrderId;
-import com.damon.order.infra.order.mapper.OrderItemMapper;
-import com.damon.order.infra.order.mapper.OrderItemPO;
-import com.damon.order.infra.order.mapper.OrderMapper;
-import com.damon.order.infra.order.mapper.OrderPO;
+import com.damon.test.domain.order.IOrderGateway;
+import com.damon.test.domain.order.Order;
+import com.damon.test.domain.order.OrderId;
+import com.damon.test.infrastructure.order.mapper.OrderItemMapper;
+import com.damon.test.infrastructure.order.mapper.OrderItemPO;
+import com.damon.test.infrastructure.order.mapper.OrderMapper;
+import com.damon.test.infrastructure.order.mapper.OrderPO;
+
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,15 +40,13 @@ public class OrderGateway extends MybatisRepositorySupport implements IOrderGate
     }
 
     private Long create(Aggregate<Order> orderAggregate) {
-        Order root = orderAggregate.getRoot();
-        OrderPO orderPO = OrderFactory.convert(root);
-        super.insert(orderPO);
-        root.getOrderItems().forEach(orderItem -> {
-            orderItem.setOrderId(orderPO.getId());
-            OrderItemPO orderItemPO = OrderFactory.convert(orderItem);
-            super.insert(orderItemPO);
+        Order order = orderAggregate.getRoot();
+        super.insert(order, OrderFactory::convert);
+        order.getOrderItems().forEach(orderItem -> {
+            orderItem.setOrderId(order.getId());
+            super.insert(orderItem, OrderFactory::convert);
         });
-        return orderPO.getId();
+        return order.getId();
     }
 
     @Override
@@ -63,16 +62,16 @@ public class OrderGateway extends MybatisRepositorySupport implements IOrderGate
     }
 
     private Long update(Aggregate<Order> orderAggregate) {
-        Order root = orderAggregate.getRoot();
+        Order order = orderAggregate.getRoot();
         Order snapshot = orderAggregate.getSnapshot();
-        Boolean result = super.executeSafeUpdate(root, snapshot, OrderFactory::convert);
-        Boolean result2 = super.executeUpdateList(root.getOrderItems(), snapshot.getOrderItems(), item -> {
-            item.setOrderId(root.getId());
+        Boolean result = super.executeSafeUpdate(order, snapshot, OrderFactory::convert);
+        Boolean result2 = super.executeListUpdate(order.getOrderItems(), snapshot.getOrderItems(), item -> {
+            item.setOrderId(order.getId());
             return OrderFactory.convert(item);
         });
         if (!result2 && !result) {
             throw new OptimisticLockException(String.format("Update order (%s) error, it's not found or changed by another user", orderAggregate.getRoot().getId()));
         }
-        return root.getId();
+        return order.getId();
     }
 }

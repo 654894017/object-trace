@@ -27,7 +27,7 @@ public abstract class DbRepositorySupport {
      * @param <B>
      * @return
      */
-    public <A extends Versionable, B> Boolean executeSafeUpdate(B newObj, B oldObj, Function<B, A> function) {
+    public <A extends Versionable, B extends ID> Boolean executeSafeUpdate(B newObj, B oldObj, Function<B, A> function) {
         A newObject = function.apply(newObj);
         A oldObject = function.apply(oldObj);
         Set<String> changedFields = ObjectComparator.findChangedFields(newObject, oldObject, false);
@@ -44,7 +44,7 @@ public abstract class DbRepositorySupport {
      * @param <B>
      * @return
      */
-    public <A extends ID, B> Boolean executeUpdate(B newObj, B oldObj, Function<B, A> convert) {
+    public <A extends ID, B extends ID> Boolean executeUpdate(B newObj, B oldObj, Function<B, A> convert) {
         A newObject = convert.apply(newObj);
         A oldObject = convert.apply(oldObj);
         Set<String> changedFields = ObjectComparator.findChangedFields(newObject, oldObject);
@@ -63,8 +63,8 @@ public abstract class DbRepositorySupport {
      * @param <B>
      * @return
      */
-    public <A extends ID, B extends ID> Boolean executeUpdateList(Collection<B> newItem, Collection<B> oldItem, Function<B, A> convert) {
-        return executeUpdateList(newItem, oldItem, convert, null);
+    public <A extends ID, B extends ID> Boolean executeListUpdate(Collection<B> newItem, Collection<B> oldItem, Function<B, A> convert) {
+        return executeListUpdate(newItem, oldItem, convert, null);
     }
 
 
@@ -79,16 +79,16 @@ public abstract class DbRepositorySupport {
      * @param <B>
      * @return
      */
-    public <T extends ID, B extends ID> Boolean executeUpdateList(Collection<B> newItem, Collection<B> oldItem,
-                                                                  Function<B, T> convert, Predicate<B> isNew) {
-        Collection<B> newAddItems;
+    public <T extends ID, B extends ID> Boolean executeListUpdate(Collection<T> newItem, Collection<T> oldItem,
+                                                                  Function<T, B> convert, Predicate<T> isNew) {
+        Collection<T> newAddItems;
         if (isNew == null) {
             newAddItems = ObjectComparator.findNewEntities(newItem, oldItem);
         } else {
             newAddItems = ObjectComparator.findNewEntities(newItem, isNew::test);
         }
-        for (B item : newAddItems) {
-            T itemPO = convert.apply(item);
+        for (T item : newAddItems) {
+            B itemPO = convert.apply(item);
             boolean result = insert(itemPO);
             item.setId(itemPO.getId());
             if (!result) {
@@ -97,10 +97,10 @@ public abstract class DbRepositorySupport {
             }
         }
         newItem.removeAll(newAddItems);
-        Collection<T> newItems = newItem.stream().map(convert::apply).collect(Collectors.toList());
-        Collection<T> oldItems = oldItem.stream().map(convert::apply).collect(Collectors.toList());
-        Collection<ChangedEntity<T>> changedEntityList = ObjectComparator.findChangedEntities(newItems, oldItems);
-        for (ChangedEntity<T> changedEntity : changedEntityList) {
+        Collection<B> newItems = newItem.stream().map(convert::apply).collect(Collectors.toList());
+        Collection<B> oldItems = oldItem.stream().map(convert::apply).collect(Collectors.toList());
+        Collection<ChangedEntity<B>> changedEntityList = ObjectComparator.findChangedEntities(newItems, oldItems);
+        for (ChangedEntity<B> changedEntity : changedEntityList) {
             Set<String> changedFields = ObjectComparator.findChangedFields(changedEntity.getNewEntity(), changedEntity.getOldEntity());
             if (changedFields.isEmpty()) {
                 continue;
@@ -115,15 +115,15 @@ public abstract class DbRepositorySupport {
             }
         }
 
-        Collection<T> removedItems = ObjectComparator.findRemovedEntities(newItems, oldItems);
+        Collection<B> removedItems = ObjectComparator.findRemovedEntities(newItems, oldItems);
         if (removedItems.isEmpty()) {
             return true;
         }
 
-        for (T item : removedItems) {
+        for (B item : removedItems) {
             boolean result = this.delete(item);
             if (!result) {
-                Set<Object> removedItemIds = removedItems.stream().map(T::getId).collect(Collectors.toSet());
+                Set<Object> removedItemIds = removedItems.stream().map(B::getId).collect(Collectors.toSet());
                 log.warn("Delete item failed, type: {} , ids : {}", item.getClass().getTypeName(), removedItemIds);
                 return false;
             }
@@ -135,6 +135,8 @@ public abstract class DbRepositorySupport {
     protected abstract <A extends ID> Boolean delete(A item);
 
     protected abstract <A extends ID> Boolean insert(A entity);
+
+    protected abstract <A extends ID, B extends ID> Boolean insert(A domainEntity, Function<A, B> function);
 
     protected abstract <A extends ID> Boolean update(A entity, Set<String> changedFields);
 

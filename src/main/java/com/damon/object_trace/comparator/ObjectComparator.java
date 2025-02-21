@@ -22,7 +22,7 @@ public class ObjectComparator {
 
     public static Set<String> findChangedFields(Object newObject, Object oldObject, boolean toUnderlineCase) {
         Set<String> differentProperties = new HashSet<>();
-        if (newObject != null && oldObject != null && newObject.getClass().equals(oldObject.getClass())) {
+        if (isValidComparison(newObject, oldObject)) {
             Class<?> clazz = newObject.getClass();
             Field[] fields = ReflectUtil.getFields(clazz);
             for (Field field : fields) {
@@ -47,7 +47,9 @@ public class ObjectComparator {
         }
         return differentProperties;
     }
-
+    private static boolean isValidComparison(Object obj1, Object obj2) {
+        return obj1 != null && obj2 != null && obj1.getClass().equals(obj2.getClass());
+    }
     /**
      * 对象为字符串时:  null == ''
      *

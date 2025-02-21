@@ -1,13 +1,14 @@
-package com.damon.order.infra.order;
+package com.damon.test.infrastructure.order;
 
 
 import com.damon.object_trace.Aggregate;
 import com.damon.object_trace.AggregateFactory;
-import com.damon.order.damain.entity.Consignee;
-import com.damon.order.damain.entity.Order;
-import com.damon.order.damain.entity.OrderItem;
-import com.damon.order.infra.order.mapper.OrderItemPO;
-import com.damon.order.infra.order.mapper.OrderPO;
+import com.damon.test.domain.order.Consignee;
+import com.damon.test.domain.order.Order;
+import com.damon.test.domain.order.OrderItem;
+import com.damon.test.infrastructure.order.mapper.OrderItemPO;
+import com.damon.test.infrastructure.order.mapper.OrderPO;
+
 import lombok.NonNull;
 
 import java.util.List;

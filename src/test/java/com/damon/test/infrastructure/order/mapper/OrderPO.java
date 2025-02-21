@@ -1,4 +1,4 @@
-package com.damon.order.infra.order.mapper;
+package com.damon.test.infrastructure.order.mapper;
 
 
 import com.baomidou.mybatisplus.annotation.*;

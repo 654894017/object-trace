@@ -1,9 +1,7 @@
-package com.damon.order.damain;
+package com.damon.test.domain.order;
 
 
 import com.damon.object_trace.Aggregate;
-import com.damon.order.damain.entity.Order;
-import com.damon.order.damain.entity.OrderId;
 
 public interface IOrderGateway {
 

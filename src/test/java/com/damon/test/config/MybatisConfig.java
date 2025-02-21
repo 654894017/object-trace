@@ -1,8 +1,7 @@
-package com.damon.order.infra.config;
+package com.damon.test.config;
 
 import com.baomidou.mybatisplus.core.config.GlobalConfig;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
-import com.baomidou.mybatisplus.extension.plugins.inner.DataChangeRecorderInnerInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.OptimisticLockerInnerInterceptor;
 import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
 import com.zaxxer.hikari.HikariDataSource;
@@ -15,8 +14,8 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import javax.sql.DataSource;
 
 @Configuration
-@MapperScan("com.damon.order.infra.**.mapper")
-public class OrderConfig {
+@MapperScan("com.damon.test.**.mapper")
+public class MybatisConfig {
     @Bean
     public DataSource dataSource() {
         HikariDataSource dataSource = new HikariDataSource();
@@ -35,7 +34,7 @@ public class OrderConfig {
     public SqlSessionFactory sqlSessionFactory(DataSource dataSource) throws Exception {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
         interceptor.addInnerInterceptor(new OptimisticLockerInnerInterceptor());
-      //  interceptor.addInnerInterceptor(new DataChangeRecorderInnerInterceptor());
+        //  interceptor.addInnerInterceptor(new DataChangeRecorderInnerInterceptor());
         MybatisSqlSessionFactoryBean sessionFactory = new MybatisSqlSessionFactoryBean();
         sessionFactory.setPlugins(interceptor);
         sessionFactory.setDataSource(dataSource);

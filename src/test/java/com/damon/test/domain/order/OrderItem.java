@@ -1,4 +1,4 @@
-package com.damon.order.damain.entity;
+package com.damon.test.domain.order;
 
 import com.damon.object_trace.ID;
 import lombok.Data;

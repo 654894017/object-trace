@@ -23,75 +23,62 @@ Data等框架直接用于聚合持久化时，总是面临一些困难，而且�
 为核心，当Repository查询或保存聚合时，返回的不是聚合本身，而是聚合容器`Aggregate<T>`。以订单创建为例，OrderGateway的代码如下：
 
 ```java
-package com.damon.order.infra.order;
-
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.damon.object_trace.Aggregate;
-import com.damon.object_trace.mybatis.MybatisRepositorySupport;
-import com.damon.order.damain.IOrderGateway;
-import com.damon.order.damain.entity.Order;
-import com.damon.order.damain.entity.OrderId;
-import com.damon.order.infra.order.mapper.OrderItemMapper;
-import com.damon.order.infra.order.mapper.OrderItemPO;
-import com.damon.order.infra.order.mapper.OrderMapper;
-import com.damon.order.infra.order.mapper.OrderPO;
-import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Optional;
-
 @Repository
 public class OrderGateway extends MybatisRepositorySupport implements IOrderGateway {
-    private final OrderMapper orderMapper;
-    private final OrderItemMapper orderItemMapper;
+  private final OrderMapper orderMapper;
+  private final OrderItemMapper orderItemMapper;
 
-    public OrderGateway(OrderMapper orderMapper, OrderItemMapper orderItemMapper) {
-        this.orderMapper = orderMapper;
-        this.orderItemMapper = orderItemMapper;
+  public OrderGateway(OrderMapper orderMapper, OrderItemMapper orderItemMapper) {
+    this.orderMapper = orderMapper;
+    this.orderItemMapper = orderItemMapper;
+  }
+
+  @Override
+  public Aggregate<Order> get(OrderId orderId) {
+    OrderPO orderPO = orderMapper.selectById(orderId.getId());
+    if (orderPO == null) {
+      throw new EntityNotFoundException(String.format("Order (%s) is not found", orderId.getId()));
     }
+    List<OrderItemPO> orderItemPOList = orderItemMapper.selectList(
+            new LambdaQueryWrapper<OrderItemPO>().eq(OrderItemPO::getOrderId, orderId.getId()));
+    return OrderFactory.convert(orderPO, orderItemPOList);
+  }
 
-    @Override
-    public Aggregate<Order> get(OrderId orderId) {
-        OrderPO orderPO = orderMapper.selectById(orderId.getId());
-        if (orderPO == null) {
-            return null;
-        }
-        List<OrderItemPO> orderItemPOList = orderItemMapper.selectList(
-                new LambdaQueryWrapper<OrderItemPO>().eq(OrderItemPO::getOrderId, orderId.getId()));
-        return OrderFactory.convert(orderPO, orderItemPOList);
+  private Long create(Aggregate<Order> orderAggregate) {
+    Order order = orderAggregate.getRoot();
+    super.insert(order, OrderFactory::convert);
+    order.getOrderItems().forEach(orderItem -> {
+      orderItem.setOrderId(order.getId());
+      super.insert(orderItem, OrderFactory::convert);
+    });
+    return order.getId();
+  }
+
+  @Override
+  @Transactional(rollbackFor = Exception.class)
+  public Long save(Aggregate<Order> aggregate) {
+    if (aggregate.isNew()) {
+      return create(aggregate);
     }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void create(Aggregate<Order> orderAggregate) {
-        Order root = orderAggregate.getRoot();
-        OrderPO orderPO = OrderFactory.convert(root);
-        orderMapper.insert(orderPO);
-        root.getOrderItems().forEach(orderItem -> {
-            OrderItemPO orderItemPO = OrderFactory.convertPO(orderItem);
-            orderItemMapper.insert(orderItemPO);
-        });
+    if (!aggregate.isChanged()) {
+      return aggregate.getRoot().getId();
     }
+    return update(aggregate);
+  }
 
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void save(Aggregate<Order> orderAggregate) {
-        if (!orderAggregate.isChanged()) {
-            return;
-        }
-        Order root = orderAggregate.getRoot();
-        Order snapshot = orderAggregate.getSnapshot();
-        Boolean result = super.executeSafeUpdate(root, snapshot, OrderFactory::convert);
-        if (!result) {
-            throw new RuntimeException(String.format("Update order (%s) error, it's not found or changed by another user", orderAggregate.getRoot().getId()));
-        }
-
-        Boolean result2 = super.executeUpdateList(root.getOrderItems(), snapshot.getOrderItems(), OrderFactory::convertPO);
-        if (!result2) {
-            throw new RuntimeException(String.format("Update order (%s) error, it's not found or changed by another user", orderAggregate.getRoot().getId()));
-        }
+  private Long update(Aggregate<Order> orderAggregate) {
+    Order order = orderAggregate.getRoot();
+    Order snapshot = orderAggregate.getSnapshot();
+    Boolean result = super.executeSafeUpdate(order, snapshot, OrderFactory::convert);
+    Boolean result2 = super.executeListUpdate(order.getOrderItems(), snapshot.getOrderItems(), item -> {
+      item.setOrderId(order.getId());
+      return OrderFactory.convert(item);
+    });
+    if (!result2 && !result) {
+      throw new OptimisticLockException(String.format("Update order (%s) error, it's not found or changed by another user", orderAggregate.getRoot().getId()));
     }
+    return order.getId();
+  }
 }
 ```
 
@@ -100,7 +87,7 @@ public class OrderGateway extends MybatisRepositorySupport implements IOrderGate
 * `public R getRoot()`：获取聚合根
 * `public R getRootSnapshot()`: 获取聚合根的历史快照
 * `public boolean isChanged()`: 聚合是否发生了变化
-* `public boolean isNew()`：是否为新的聚合 (暂不支持)
+* `public boolean isNew()`：是否为新的聚合
 
 `ObjectComparator`用于比较对象之间的差异，用户处理新增、修改、删除的实体，包括实体修改了，可以获取变动的属性。它提供以下功能：
 
@@ -112,7 +99,8 @@ public class OrderGateway extends MybatisRepositorySupport implements IOrderGate
   ：在实体集合（例如所有订单明细行中）找到已经删除的实体
 
 工具类`ObjectComparator`
-提供了对象的对比功能。它可以帮助你修改数据库时只update那些变化了的字段。以Person为例，`ObjectComparator.getChangedFields(personSnapshot, personCurrent)`
+提供了对象的对比功能。它可以帮助你修改数据库时只update那些变化了的字段。以Person为例，
+`ObjectComparator.getChangedFields(personSnapshot, personCurrent)`
 将返回哪些Field发生了变化。你可以据此按需修改数据库（请参考示例工程）。
 
 与Hibernate的`@Version`类似，聚合根需要实现Versionable接口，以便Repository基于Version实现乐观锁。Repository对聚合的所有持久化操作，都要判断Version。示意SQL如下：
@@ -149,5 +137,6 @@ object-trace 本身并不负责持久化工作，它是一个工具，用于识�
 
 ## 4. 总结
 
-总的来说，本项目提供了一种轻量级聚合持久化方案，能够帮助开发者设计干净的领域模型的同时，很好地支持Repository做持久化工作。通过持有聚合根的快照，`Aggregate<T>`
+总的来说，本项目提供了一种轻量级聚合持久化方案，能够帮助开发者设计干净的领域模型的同时，很好地支持Repository做持久化工作。通过持有聚合根的快照，
+`Aggregate<T>`
 可以识别聚合发生了哪些变化，然后Repository使用基于Version的乐观锁和ObjectComparator在字段属性级别的比较功能，实现按需更新数据库。

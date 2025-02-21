@@ -1,4 +1,4 @@
-package com.damon.order.damain.entity;
+package com.damon.test.domain.order;
 
 import cn.hutool.core.util.PhoneUtil;
 import lombok.Data;

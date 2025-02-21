@@ -12,7 +12,7 @@ import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
 import com.damon.aggregate.persistence.DbRepositorySupport;
 import com.damon.aggregate.persistence.ID;
 import com.damon.aggregate.persistence.Versionable;
-import com.damon.aggregate.persistence.exception.ObjectTraceException;
+import com.damon.aggregate.persistence.exception.AggregatePersistenceException;
 import com.damon.aggregate.persistence.utils.ReflectUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.mybatis.spring.SqlSessionUtils;
@@ -37,8 +37,8 @@ public class MybatisRepositorySupport extends DbRepositorySupport {
     @Override
     protected <A extends ID> Boolean insert(A entity) {
         if (entity instanceof Versionable) {
-            Versionable versionableEntity = (Versionable) entity;
-            versionableEntity.setVersion(1);
+            Versionable versionable = (Versionable) entity;
+            versionable.setVersion(1);
         }
         SqlSession sqlSession = getSqlSession(entity.getClass());
         try {
@@ -82,7 +82,7 @@ public class MybatisRepositorySupport extends DbRepositorySupport {
         Map<String, Object> map = CollectionUtils.newHashMapWithExpectedSize(2);
         String primaryKey = getPrimaryKey(entity.getClass());
         if (primaryKey == null) {
-            throw new ObjectTraceException("Entity not found with the primary key annotation. entity : " + entity.getClass().getName());
+            throw new AggregatePersistenceException("Entity not found with the primary key annotation. entity : " + entity.getClass().getName());
         }
         UpdateWrapper<A> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq(primaryKey, entity.getId());
@@ -115,7 +115,7 @@ public class MybatisRepositorySupport extends DbRepositorySupport {
         // 创建 UpdateWrapper 对象以指定更新条件
         String primaryKey = getPrimaryKey(entity.getClass());
         if (primaryKey == null) {
-            throw new ObjectTraceException("Entity not found with the primary key annotation. entity : " + entity.getClass().getName());
+            throw new AggregatePersistenceException("Entity not found with the primary key annotation. entity : " + entity.getClass().getName());
         }
         UpdateWrapper<A> updateWrapper = new UpdateWrapper<>();
         updateWrapper.eq(primaryKey, entity.getId());

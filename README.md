@@ -7,78 +7,82 @@
 
 ## 1. 简介
 
+# aggregate-persistence
+
+## 1. 简介
+
 领域驱动设计(DDD)已经被业界认为是行之有效的复杂问题解决之道。随着微服务的流行，DDD也被更多的团队采纳。然而在DDD落地时，聚合(
 Aggregate)的持久化一直缺少一种优雅的方式解决。
 
 在DDD实践中，聚合应该作为一个完整的单元进行读取和持久化，以确保业务的不变性或者说业务规则不变破坏。例如，订单总金额应该与订单明细金额之和一致。
 
 由于领域模型和数据库的数据模型可能不一致，并且聚合可能涉及多个实体，因此Hibernate, MyBatis和Spring
-Data等框架直接用于聚合持久化时，总是面临一些困难，而且代码也不够优雅。有人认为NoSQL是最适合聚合持久化的方案。确实如此，每个聚合实例就是一个文档，NoSQL天然为聚合持久化提供了很好的支持。然而并不是所有系统都适合用NoSQL。当遇到关系型数据库时，一种方式是将领域事件引入持久化过程。
-也就是在处理业务过程中，聚合抛出领域事件，Repository根据领域事件的不同，执行不同的SQL，完成数据库的修改。但这样的话，Repository层就要引入一些逻辑判断，代码冗余增加了维护成本。
+Data等框架直接用于聚合持久化时，总是面临一些困难，而且代码也不够优雅。有人认为NoSQL是最适合聚合持久化的方案。确实如此，每个聚合实例就是一个文档，NoSQL天然为聚合持久化提供了很好的支持。然而并不是所有系统都适合用NoSQL。当遇到关系型数据库时，一种方式是将领域事件引入持久化过程。也就是在处理业务过程中，聚合抛出领域事件，Repository根据领域事件的不同，执行不同的SQL，完成数据库的修改。但这样的话，Repository层就要引入一些逻辑判断，代码冗余增加了维护成本。
 
 本项目旨在提供一种轻量级聚合持久化方案，帮助开发者真正从业务出发设计领域模型，不需要考虑持久化的事情。在实现Repository持久化时，不需要考虑业务逻辑，只负责聚合的持久化，从而真正做到关注点分离。
 **也就是说，不论有多少个业务场景对聚合进行了修改，对聚合的持久化只需要一个方法。**
 
-方案的核心是`Aggregate<T>`容器，T是聚合根的类型。Repository以`Aggregate<T>`
-为核心，当Repository查询或保存聚合时，返回的不是聚合本身，而是聚合容器`Aggregate<T>`。以订单创建为例，OrderGateway的代码如下：
+方案的核心是`Aggregate<T>`容器，T是聚合根的类型。Repository以`Aggregate<T>`为核心，当Repository查询或保存聚合时，返回的不是聚合本身，而是聚合容器
+`Aggregate<T>`。以订单创建为例，OrderGateway的代码如下：
 
 ```java
+
 @Repository
 public class OrderGateway extends MybatisRepositorySupport implements IOrderGateway {
-  private final OrderMapper orderMapper;
-  private final OrderItemMapper orderItemMapper;
+    private final OrderMapper orderMapper;
+    private final OrderItemMapper orderItemMapper;
 
-  public OrderGateway(OrderMapper orderMapper, OrderItemMapper orderItemMapper) {
-    this.orderMapper = orderMapper;
-    this.orderItemMapper = orderItemMapper;
-  }
-
-  @Override
-  public Aggregate<Order> get(OrderId orderId) {
-    OrderPO orderPO = orderMapper.selectById(orderId.getId());
-    if (orderPO == null) {
-      throw new EntityNotFoundException(String.format("Order (%s) is not found", orderId.getId()));
+    public OrderGateway(OrderMapper orderMapper, OrderItemMapper orderItemMapper) {
+        this.orderMapper = orderMapper;
+        this.orderItemMapper = orderItemMapper;
     }
-    List<OrderItemPO> orderItemPOList = orderItemMapper.selectList(
-            new LambdaQueryWrapper<OrderItemPO>().eq(OrderItemPO::getOrderId, orderId.getId()));
-    return OrderFactory.convert(orderPO, orderItemPOList);
-  }
 
-  private Long create(Aggregate<Order> orderAggregate) {
-    Order order = orderAggregate.getRoot();
-    super.insert(order, OrderFactory::convert);
-    order.getOrderItems().forEach(orderItem -> {
-      orderItem.setOrderId(order.getId());
-      super.insert(orderItem, OrderFactory::convert);
-    });
-    return order.getId();
-  }
+    @Override
+    public Aggregate<Order> get(OrderId orderId) {
+        OrderPO orderPO = orderMapper.selectById(orderId.getId());
+        if (orderPO == null) {
+            throw new EntityNotFoundException(String.format("Order (%s) is not found", orderId.getId()));
+        }
+        List<OrderItemPO> orderItemPOList = orderItemMapper.selectList(
+                new LambdaQueryWrapper<OrderItemPO>().eq(OrderItemPO::getOrderId, orderId.getId()));
+        return OrderFactory.convert(orderPO, orderItemPOList);
+    }
 
-  @Override
-  @Transactional(rollbackFor = Exception.class)
-  public Long save(Aggregate<Order> aggregate) {
-    if (aggregate.isNew()) {
-      return create(aggregate);
+    private Long create(Aggregate<Order> orderAggregate) {
+        Order order = orderAggregate.getRoot();
+        super.insert(order, OrderFactory::convert);
+        order.getOrderItems().forEach(orderItem -> {
+            orderItem.setOrderId(order.getId());
+            super.insert(orderItem, OrderFactory::convert);
+        });
+        return order.getId();
     }
-    if (!aggregate.isChanged()) {
-      return aggregate.getRoot().getId();
-    }
-    return update(aggregate);
-  }
 
-  private Long update(Aggregate<Order> orderAggregate) {
-    Order order = orderAggregate.getRoot();
-    Order snapshot = orderAggregate.getSnapshot();
-    Boolean result = super.executeSafeUpdate(order, snapshot, OrderFactory::convert);
-    Boolean result2 = super.executeListUpdate(order.getOrderItems(), snapshot.getOrderItems(), item -> {
-      item.setOrderId(order.getId());
-      return OrderFactory.convert(item);
-    });
-    if (!result2 && !result) {
-      throw new OptimisticLockException(String.format("Update order (%s) error, it's not found or changed by another user", orderAggregate.getRoot().getId()));
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Long save(Aggregate<Order> aggregate) {
+        if (aggregate.isNew()) {
+            return create(aggregate);
+        }
+        if (!aggregate.isChanged()) {
+            return aggregate.getRoot().getId();
+        }
+        return update(aggregate);
     }
-    return order.getId();
-  }
+
+    private Long update(Aggregate<Order> orderAggregate) {
+        Order order = orderAggregate.getRoot();
+        Order snapshot = orderAggregate.getSnapshot();
+        Boolean result = super.executeSafeUpdate(order, snapshot, OrderFactory::convert);
+        Boolean result2 = super.executeListUpdate(order.getOrderItems(), snapshot.getOrderItems(), item -> {
+            item.setOrderId(order.getId());
+            return OrderFactory.convert(item);
+        });
+        if (!result2 && !result) {
+            throw new OptimisticLockException(String.format("Update order (%s) error, it's not found or changed by another user", orderAggregate.getRoot().getId()));
+        }
+        return order.getId();
+    }
 }
 ```
 
@@ -121,6 +125,7 @@ where id = #{id} and version = #{version}
 在项目中加入以下依赖，就可以使用aggregate-persistence的功能了：
 
 ```xml
+
 <dependency>
     <groupId>com.damon</groupId>
     <artifactId>aggregate-persistence</artifactId>

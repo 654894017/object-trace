@@ -1,6 +1,6 @@
 package com.damon.aggregate.persistence.exception;
 
-public class OptimisticLockException extends ObjectTraceException {
+public class OptimisticLockException extends RuntimeException {
     public OptimisticLockException(String message) {
         super(message);
     }

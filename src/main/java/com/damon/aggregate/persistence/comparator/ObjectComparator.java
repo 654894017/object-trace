@@ -4,7 +4,7 @@ import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.ReflectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.damon.aggregate.persistence.ID;
-import com.damon.aggregate.persistence.exception.ObjectTraceException;
+import com.damon.aggregate.persistence.exception.AggregatePersistenceException;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
 import java.lang.reflect.Field;
@@ -41,7 +41,7 @@ public class ObjectComparator {
                         }
                     }
                 } catch (Exception e) {
-                    throw new ObjectTraceException(field.getName(), e);
+                    throw new AggregatePersistenceException(field.getName(), e);
                 }
             }
         }
